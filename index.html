@@ -94,7 +94,7 @@ function wireTerminal(el){const input=el.querySelector("#terminal-input"),out=el
 document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openApp(b.dataset.open)));
 $("start-btn").onclick=()=>{$("start-menu").classList.toggle("open");$("app-search").value="";filterApps("")};
 $("quick-settings").onclick=()=>openApp("settings");
-$("power-btn").onclick=()=>{Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").classList.remove("hide");notify("NEXUS session ended")};
+$("power-btn").onclick=()=>{Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").style.display="grid";$("login").classList.remove("hide");notify("NEXUS session ended")};
 $("login-btn").onclick=()=>{$("login").classList.add("hide");$("desktop").style.display="block";setTimeout(()=>$("login").style.display="none",500)};
 $("error-dismiss").onclick=()=>$("error-overlay").classList.remove("show");
 $("error-reload").onclick=()=>location.reload();
