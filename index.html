@@ -25,7 +25,7 @@ body.light{--panel:rgba(245,248,255,.94);--task:rgba(239,244,255,.82);--text:#18
 <body>
 <div id="stage">
  <section id="boot" class="screen"><div class="boot-inner"><div class="brand"><div class="brand-mark">N</div><span>NEXUS</span></div><div class="boot-sub">A new space to work and play</div><div class="boot-track"><i></i></div></div></section>
- <section id="login" class="screen hide"><div class="login-card"><div class="brand" style="justify-content:center;font-size:17px"><div class="brand-mark" style="width:32px;height:32px;border-radius:10px;font-size:18px">N</div><span>NEXUS OS</span></div><div class="login-avatar">👤</div><h1 id="auth-heading">Welcome back</h1><p id="auth-subtitle">Sign in to your NEXUS account</p><form class="auth-form" id="signin-form"><label class="auth-label" for="signin-username">Username</label><input class="auth-input" id="signin-username" name="username" autocomplete="username" minlength="3" maxlength="20" required placeholder="Your username"><label class="auth-label" for="signin-password">Password</label><input class="auth-input" id="signin-password" name="password" type="password" autocomplete="current-password" required placeholder="Your password"><div class="auth-error" id="signin-error"></div><button class="primary" type="submit" id="signin-submit">Sign in</button></form><form class="auth-form" id="signup-form" style="display:none"><label class="auth-label" for="signup-username">Permanent username</label><input class="auth-input" id="signup-username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="letters, numbers, underscores"><label class="auth-label" for="signup-nickname">Nickname</label><input class="auth-input" id="signup-nickname" maxlength="32" required placeholder="What people see"><label class="auth-label" for="signup-password">Password (10+ characters)</label><input class="auth-input" id="signup-password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Create a strong password"><label class="auth-label" for="signup-answer">Your answer</label><input class="auth-input" id="signup-answer" maxlength="100" required placeholder="Your private answer"><div class="auth-error" id="signup-error"></div><button class="primary" type="submit" id="signup-submit">Create NEXUS account</button><p class="auth-note">Your username is permanent. Your nickname can be changed later. No email or phone number required.</p></form><button class="auth-switch" id="forgot-password" type="button" style="display:block;margin:10px auto 0">Forgot password?</button><form class="auth-form" id="recover-form" style="display:none;margin-top:12px"><label class="auth-label" for="recover-username">Username</label><input class="auth-input" id="recover-username" required placeholder="Permanent username"><label class="auth-label" for="recover-answer">Your answer</label><input class="auth-input" id="recover-answer" required placeholder="Your answer"><label class="auth-label" for="recover-code">One-time recovery code</label><input class="auth-input" id="recover-code" required placeholder="XXXX-XXXX-XXXX"><label class="auth-label" for="recover-new-password">New password</label><input class="auth-input" id="recover-new-password" type="password" minlength="10" required placeholder="At least 10 characters"><div class="auth-error" id="recover-error"></div><button class="primary" type="submit" id="recover-submit">Reset password</button><button class="auth-switch" id="recover-cancel" type="button">Back to sign in</button></form><button class="auth-switch" id="auth-switch" type="button">New to NEXUS? Create an account</button><div class="recovery-box" id="recovery-box"><strong style="font-size:12px">Save your recovery codes</strong><p class="auth-note">Each code can be used once. They will only be shown here once. Keep them somewhere private.</p><textarea id="recovery-codes" readonly></textarea><button class="pill" type="button" id="copy-recovery">Copy codes</button><button class="primary" style="width:100%;margin-top:9px" type="button" id="recovery-done">I've saved these codes</button></div></div></section>
+ <section id="login" class="screen hide"><div class="login-card"><div class="brand" style="justify-content:center;font-size:17px"><div class="brand-mark" style="width:32px;height:32px;border-radius:10px;font-size:18px">N</div><span>NEXUS OS</span></div><div class="login-avatar">👤</div><h1 id="auth-heading">Welcome back</h1><p id="auth-subtitle">Sign in to your NEXUS account</p><form class="auth-form" id="signin-form"><label class="auth-label" for="signin-username">Username</label><input class="auth-input" id="signin-username" name="username" autocomplete="username" minlength="3" maxlength="20" required placeholder="Your username"><label class="auth-label" for="signin-password">Password</label><input class="auth-input" id="signin-password" name="password" type="password" autocomplete="current-password" required placeholder="Your password"><div class="auth-error" id="signin-error"></div><button class="primary" type="submit" id="signin-submit">Sign in</button></form><form class="auth-form" id="signup-form" style="display:none"><label class="auth-label" for="signup-username">Permanent username</label><input class="auth-input" id="signup-username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="letters, numbers, underscores"><label class="auth-label" for="signup-nickname">Nickname</label><input class="auth-input" id="signup-nickname" maxlength="32" required placeholder="What people see"><label class="auth-label" for="signup-password">Password (10+ characters)</label><input class="auth-input" id="signup-password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Create a strong password"><label class="auth-label" for="signup-answer">Your answer</label><input class="auth-input" id="signup-answer" maxlength="100" required placeholder="Your private answer"><div class="auth-error" id="signup-error"></div><button class="primary" type="submit" id="signup-submit">Create NEXUS account</button><p class="auth-note">Your username is permanent. Your nickname can be changed later. No email or phone number required.</p></form><div id="startup-status" style="display:none;margin:12px 0;padding:11px;border:1px solid #e5b86a55;border-radius:10px;background:#e5b86a12;color:#f1d9a8;font-size:11px;line-height:1.5"><span id="startup-message">NEXUS is taking longer than expected to check your session.</span><button class="pill" id="startup-retry" type="button" style="display:block;margin:9px auto 0">Retry connection</button></div><button class="auth-switch" id="forgot-password" type="button" style="display:block;margin:10px auto 0">Forgot password?</button><form class="auth-form" id="recover-form" style="display:none;margin-top:12px"><label class="auth-label" for="recover-username">Username</label><input class="auth-input" id="recover-username" required placeholder="Permanent username"><label class="auth-label" for="recover-answer">Your answer</label><input class="auth-input" id="recover-answer" required placeholder="Your answer"><label class="auth-label" for="recover-code">One-time recovery code</label><input class="auth-input" id="recover-code" required placeholder="XXXX-XXXX-XXXX"><label class="auth-label" for="recover-new-password">New password</label><input class="auth-input" id="recover-new-password" type="password" minlength="10" required placeholder="At least 10 characters"><div class="auth-error" id="recover-error"></div><button class="primary" type="submit" id="recover-submit">Reset password</button><button class="auth-switch" id="recover-cancel" type="button">Back to sign in</button></form><button class="auth-switch" id="auth-switch" type="button">New to NEXUS? Create an account</button><div class="recovery-box" id="recovery-box"><strong style="font-size:12px">Save your recovery codes</strong><p class="auth-note">Each code can be used once. They will only be shown here once. Keep them somewhere private.</p><textarea id="recovery-codes" readonly></textarea><button class="pill" type="button" id="copy-recovery">Copy codes</button><button class="primary" style="width:100%;margin-top:9px" type="button" id="recovery-done">I've saved these codes</button></div></div></section>
  <main id="desktop">
   <div class="desktop-icons">
    <button class="desk-icon" data-open="files"><span class="glyph">📁</span><span>Files</span></button>
@@ -149,7 +149,51 @@ $("signup-form").addEventListener("submit",async e=>{e.preventDefault();$("signu
 $("copy-recovery").onclick=()=>{const text=$("recovery-codes").value;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>notify("Recovery codes copied")).catch(()=>notify("Select and copy the codes manually"))}else notify("Select and copy the codes manually")};
 $("recovery-done").onclick=()=>{if(!pendingRecoveryComplete)return;$("recovery-box").style.display="none";$("login").classList.add("hide");$("desktop").style.display="block";setTimeout(()=>$("login").style.display="none",500);pendingRecoveryComplete=false;notify("Account created · welcome to NEXUS")};
 async function signOutNexus(){try{const {error}=await nexusAuth.auth.signOut();if(error)throw error;currentProfile=null;Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").style.display="grid";$("login").classList.remove("hide");showAuthMode(false);notify("NEXUS session ended")}catch(error){notify(error.message||"Could not sign out")}}$("power-btn").onclick=signOutNexus;$("signout-btn").onclick=signOutNexus;
-(async()=>{try{const {data}=await nexusAuth.auth.getSession();if(data.session){const p=await accountRequest({action:"profile"},data.session.access_token);currentProfile=p.profile;$("boot").classList.add("hide");$("login").classList.add("hide");$("login").style.display="none";$("desktop").style.display="block";notify("Welcome back, "+p.profile.nickname)}}catch(e){await nexusAuth.auth.signOut()}})();
+let startupAttempt=0;
+async function startupCheck(){
+ const attempt=++startupAttempt;
+ $("startup-status").style.display="none";
+ $("login").style.display="none";
+ $("login").classList.add("hide");
+ $("boot").style.display="grid";
+ $("boot").classList.remove("hide");
+ const task=(async()=>{
+  const {data,error}=await nexusAuth.auth.getSession();
+  if(error)throw error;
+  if(!data.session)return {kind:"signed-out"};
+  const p=await accountRequest({action:"profile"},data.session.access_token);
+  return {kind:"signed-in",profile:p.profile};
+ })();
+ const timeout=new Promise(resolve=>setTimeout(()=>resolve({kind:"timeout"}),7000));
+ const [result]=await Promise.all([Promise.race([task,timeout]),new Promise(resolve=>setTimeout(resolve,500))]);
+ if(attempt!==startupAttempt)return;
+ $("boot").classList.add("hide");
+ if(result.kind==="signed-in"){
+  currentProfile=result.profile;
+  $("login").style.display="none";
+  $("desktop").style.display="block";
+  notify("Welcome back, "+result.profile.nickname);
+  return;
+ }
+ $("desktop").style.display="none";
+ $("login").style.display="grid";
+ $("login").classList.remove("hide");
+ if(result.kind==="timeout"){
+  $("startup-message").textContent="NEXUS couldn't finish checking your saved session. You can still sign in, or retry the connection.";
+  $("startup-status").style.display="block";
+ }else if(result.kind==="error"){
+  $("startup-message").textContent="NEXUS couldn't verify your saved session. You can still sign in, or retry the connection.";
+  $("startup-status").style.display="block";
+ }
+}
+$("startup-retry").onclick=()=>startupCheck();
+startupCheck().catch(error=>{
+ $("boot").classList.add("hide");
+ $("login").style.display="grid";
+ $("login").classList.remove("hide");
+ $("startup-message").textContent="NEXUS couldn't check your saved session. You can still sign in, or retry.";
+ $("startup-status").style.display="block";
+});
 $("error-dismiss").onclick=()=>$("error-overlay").classList.remove("show");
 $("error-reload").onclick=()=>location.reload();
 $("app-search").addEventListener("input",e=>filterApps(e.target.value));
@@ -159,7 +203,7 @@ function updateClock(){const d=new Date();$("clock").innerHTML=d.toLocaleTimeStr
 setInterval(updateClock,1000);updateClock();
 if(safeGet("nexus-theme","dark")==="light")document.body.classList.add("light");
 const savedAccent=safeGet("nexus-accent","");if(savedAccent)document.documentElement.style.setProperty("--accent",savedAccent);
-setTimeout(()=>{$("boot").classList.add("hide");$("login").classList.remove("hide")},1450);
+startupCheck();
 })();
 </script>
 </body>
