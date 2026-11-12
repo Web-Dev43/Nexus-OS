@@ -178,22 +178,20 @@ async function startupCheck(){
  $("desktop").style.display="none";
  $("login").style.display="grid";
  $("login").classList.remove("hide");
- if(result.kind==="timeout"){
-  $("startup-message").textContent="NEXUS couldn't finish checking your saved session. You can still sign in, or retry the connection.";
-  $("startup-status").style.display="block";
- }else if(result.kind==="error"){
-  $("startup-message").textContent="NEXUS couldn't verify your saved session. You can still sign in, or retry the connection.";
-  $("startup-status").style.display="block";
- }
+ $("startup-message").textContent=result.kind==="timeout"
+  ?"NEXUS is taking too long to check your saved session. You can still sign in, or retry."
+  :"No saved session was found. Sign in below, or retry if you expected automatic sign-in.";
+ $("startup-status").style.display="block";
 }
-$("startup-retry").onclick=()=>startupCheck();
-startupCheck().catch(error=>{
+$("startup-retry").onclick=()=>startupCheck().catch(showStartupError);
+function showStartupError(){
  $("boot").classList.add("hide");
  $("login").style.display="grid";
  $("login").classList.remove("hide");
  $("startup-message").textContent="NEXUS couldn't check your saved session. You can still sign in, or retry.";
  $("startup-status").style.display="block";
-});
+}
+startupCheck().catch(showStartupError);
 $("error-dismiss").onclick=()=>$("error-overlay").classList.remove("show");
 $("error-reload").onclick=()=>location.reload();
 $("app-search").addEventListener("input",e=>filterApps(e.target.value));
