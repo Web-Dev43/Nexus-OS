@@ -52,6 +52,31 @@ body.light{--panel:rgba(245,248,255,.94);--task:rgba(239,244,255,.82);--text:#18
 </div>
 <script>
 (function(){
+ const showFailure=function(message){
+  const boot=document.getElementById("boot"),login=document.getElementById("login"),overlay=document.getElementById("error-overlay"),details=document.getElementById("error-details");
+  if(boot&&login&&overlay&&boot.classList.contains("hide")===false){
+   boot.classList.add("hide");login.style.display="grid";login.classList.remove("hide");
+   if(details)details.textContent=String(message||"NEXUS startup did not finish.").slice(0,1200);
+   overlay.classList.add("show");
+  }else if(overlay&&details&&message){
+   details.textContent=String(message).slice(0,1200);overlay.classList.add("show");
+  }
+ };
+ window.addEventListener("error",function(e){showFailure(e.message||"A startup script error occurred.");});
+ window.addEventListener("unhandledrejection",function(e){showFailure(e.reason&&e.reason.message||"A startup task failed.");});
+ setTimeout(function(){
+  const boot=document.getElementById("boot");
+  if(boot&&!boot.classList.contains("hide"))showFailure("NEXUS could not finish starting. The startup script may have failed or a required resource did not load. Reload the page and try again.");
+ },4000);
+ document.addEventListener("DOMContentLoaded",function(){
+  const dismiss=document.getElementById("error-dismiss"),reload=document.getElementById("error-reload");
+  if(dismiss)dismiss.addEventListener("click",function(){document.getElementById("error-overlay").classList.remove("show");});
+  if(reload)reload.addEventListener("click",function(){location.reload();});
+ });
+})();
+</script>
+<script>
+(function(){
 "use strict";
 const $=id=>document.getElementById(id);
 const SUPABASE_URL="https://iivuezfbfbpejygfvbyk.supabase.co";
@@ -147,7 +172,9 @@ function wireSettings(el){const body=el.querySelector(".win-body");if(!body)retu
  body.addEventListener("pointerup",async e=>{const button=e.target.closest("button");if(!button||!body.contains(button))return;const id=button.id;
  if(id==="protection-enabled"||id==="protect-installs"||id==="protect-files"){const key=({ "protection-enabled":"nexus-protection","protect-installs":"nexus-protect-installs","protect-files":"nexus-protect-files"})[id];const next=button.getAttribute("aria-pressed")!=="true";safeSet(key,next?"on":"off");paintSwitch(button,key);notify(next?"Setting enabled":"Setting disabled");e.preventDefault();return}
  if(id==="nickname-save"){e.preventDefault();try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();const p=await accountRequest({action:"nickname",nickname:$("nickname-input").value},data.session?.access_token);currentProfile=p.profile;$("account-display").textContent=p.profile.nickname;notify("Nickname updated")}catch(err){notify(err.message||"Nickname could not be updated")}return}
- if(id==="password-change-open"){e.preventDefault();$("password-change-panel").style.display=$("password-change-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-open"){e.preventDefault();$("recovery-answer-panel").style.display=$("recovery-answer-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-save"){e.preventDefault();const err=$("recovery-answer-error");err.textContent="";const currentPassword=$("recovery-current-password").value,recoveryAnswer=$("recovery-answer-new").value;if(recoveryAnswer.trim().length<2){err.textContent="Recovery answer must be at least 2 characters.";return}try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();await accountRequest({action:"changeRecoveryAnswer",currentPassword,recoveryAnswer},data.session?.access_token);$("recovery-current-password").value="";$("recovery-answer-new").value="";$("recovery-answer-panel").style.display="none";notify("Recovery answer updated")}catch(error){err.textContent=error.message||"Recovery answer could not be updated"}return}
+ if(id==="password-change-open"){e.preventDefault();$("password-change-panel").style.display=$("password-change-panel").style.display==="none"?"block":"none";return}
+ if(id==="recovery-answer-open"){e.preventDefault();$("recovery-answer-panel").style.display=$("recovery-answer-panel").style.display==="none"?"block":"none";return}
+ if(id==="recovery-answer-save"){e.preventDefault();const err=$("recovery-answer-error");err.textContent="";const currentPassword=$("recovery-current-password").value,recoveryAnswer=$("recovery-answer-new").value;if(recoveryAnswer.trim().length<2){err.textContent="Recovery answer must be at least 2 characters.";return}try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();await accountRequest({action:"changeRecoveryAnswer",currentPassword,recoveryAnswer},data.session?.access_token);$("recovery-current-password").value="";$("recovery-answer-new").value="";$("recovery-answer-panel").style.display="none";notify("Recovery answer updated")}catch(error){err.textContent=error.message||"Recovery answer could not be updated"}return}
  if(id==="password-change-save"){e.preventDefault();const err=$("password-change-error");err.textContent="";const oldPass=$("current-password").value,newPass=$("new-password").value;if(newPass.length<10){err.textContent="New password must be at least 10 characters.";return}try{if(!currentProfile?.username)throw Error("Account profile is still loading. Try again.");const auth=await ensureNexusAuth();const login=await accountRequest({action:"login",username:currentProfile.username,password:oldPass});await auth.auth.setSession({access_token:login.session.access_token,refresh_token:login.session.refresh_token});const {error}=await auth.auth.updateUser({password:newPass});if(error)throw error;$("current-password").value="";$("new-password").value="";$("password-change-panel").style.display="none";notify("Password updated")}catch(error){err.textContent=error.message||"Password could not be updated"}return}
  if(id==="theme-toggle"){e.preventDefault();document.body.classList.toggle("light");safeSet("nexus-theme",document.body.classList.contains("light")?"light":"dark");notify("Theme updated");return}
  if(button.dataset.color){e.preventDefault();document.documentElement.style.setProperty("--accent",button.dataset.color);safeSet("nexus-accent",button.dataset.color);notify("Accent color updated");return}
