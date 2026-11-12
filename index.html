@@ -50,7 +50,6 @@ body.light{--panel:rgba(245,248,255,.94);--task:rgba(239,244,255,.82);--text:#18
  <div id="toast"></div>
  <section id="error-overlay"><div class="error-card"><div class="error-label">NEXUS SYSTEM NOTICE</div><h2>Something went wrong</h2><p>NEXUS caught an error so the desktop can stay open. You can dismiss this message and keep working, or reload if the issue continues.</p><div class="error-details" id="error-details">Unknown error</div><div class="error-actions"><button class="primary" id="error-dismiss">Dismiss</button><button class="pill" id="error-reload">Reload desktop</button></div></div></section>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 "use strict";
@@ -58,7 +57,27 @@ const $=id=>document.getElementById(id);
 const SUPABASE_URL="https://iivuezfbfbpejygfvbyk.supabase.co";
 const SUPABASE_KEY="sb_publishable_S473WYGxjg24KgVRp1KfXw_NcM1g5iG";
 const ACCOUNT_ENDPOINT=SUPABASE_URL+"/functions/v1/nexus-account";
-const nexusAuth=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let nexusAuth=null;
+let supabaseLoading=null;
+async function ensureNexusAuth(){
+ if(nexusAuth)return nexusAuth;
+ if(!window.supabase){
+  if(!supabaseLoading){
+   supabaseLoading=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+    script.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    script.async=true;
+    script.onload=resolve;
+    script.onerror=()=>reject(new Error("Could not load the account service. Check your connection and try again."));
+    document.head.appendChild(script);
+   });
+  }
+  await supabaseLoading;
+ }
+ if(!window.supabase?.createClient)throw new Error("The account service did not initialize. Please reload and try again.");
+ nexusAuth=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ return nexusAuth;
+}
 let currentProfile=null;
 async function accountRequest(payload, token){
  const headers={"Content-Type":"application/json","apikey":SUPABASE_KEY};
@@ -69,7 +88,8 @@ async function accountRequest(payload, token){
  return data;
 }
 async function enterWithSession(session,profile){
- const {error}=await nexusAuth.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
+ const auth=await ensureNexusAuth();
+ const {error}=await auth.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
  if(error)throw error;
  currentProfile=profile;
  $("login").classList.add("hide");
@@ -120,15 +140,15 @@ function openApp(id){if(!appInfo[id])return;if(instances[id]){activate(id);$("st
 }
 function makeDraggable(el){const bar=el.querySelector(".titlebar");let sx=0,sy=0,ox=0,oy=0,moving=false;bar.addEventListener("pointerdown",e=>{if(e.target.closest("button")||window.matchMedia("(max-width:600px)").matches||el.classList.contains("maximized"))return;moving=true;sx=e.clientX;sy=e.clientY;const r=el.getBoundingClientRect();ox=r.left;oy=r.top;bar.setPointerCapture(e.pointerId)});bar.addEventListener("pointermove",e=>{if(!moving)return;const x=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,ox+e.clientX-sx));const y=Math.max(0,Math.min(window.innerHeight-el.offsetHeight-58,oy+e.clientY-sy));el.style.left=x+"px";el.style.top=y+"px"});bar.addEventListener("pointerup",()=>moving=false);bar.addEventListener("pointercancel",()=>moving=false)}
 function wireSettings(el){const body=el.querySelector(".win-body");if(!body)return;
- (async()=>{try{const {data}=await nexusAuth.auth.getSession();const p=await accountRequest({action:"profile"},data.session?.access_token);currentProfile=p.profile;$("account-display").textContent=p.profile.nickname;$("account-username").textContent="@"+p.profile.username;$("nickname-input").value=p.profile.nickname}catch(e){$("account-display").textContent=currentProfile?.nickname||"Account unavailable";$("account-username").textContent=currentProfile?"@"+currentProfile.username:""}})();
+ (async()=>{try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();const p=await accountRequest({action:"profile"},data.session?.access_token);currentProfile=p.profile;$("account-display").textContent=p.profile.nickname;$("account-username").textContent="@"+p.profile.username;$("nickname-input").value=p.profile.nickname}catch(e){$("account-display").textContent=currentProfile?.nickname||"Account unavailable";$("account-username").textContent=currentProfile?"@"+currentProfile.username:""}})();
  const switchSettings=[["protection-enabled","nexus-protection"],["protect-installs","nexus-protect-installs"],["protect-files","nexus-protect-files"]];
  const paintSwitch=(control,key)=>{const on=safeGet(key,"off")==="on";control.setAttribute("aria-pressed",String(on));control.classList.toggle("is-on",on)};
  switchSettings.forEach(([id,key])=>paintSwitch($(id),key));
  body.addEventListener("pointerup",async e=>{const button=e.target.closest("button");if(!button||!body.contains(button))return;const id=button.id;
  if(id==="protection-enabled"||id==="protect-installs"||id==="protect-files"){const key=({ "protection-enabled":"nexus-protection","protect-installs":"nexus-protect-installs","protect-files":"nexus-protect-files"})[id];const next=button.getAttribute("aria-pressed")!=="true";safeSet(key,next?"on":"off");paintSwitch(button,key);notify(next?"Setting enabled":"Setting disabled");e.preventDefault();return}
- if(id==="nickname-save"){e.preventDefault();try{const {data}=await nexusAuth.auth.getSession();const p=await accountRequest({action:"nickname",nickname:$("nickname-input").value},data.session?.access_token);currentProfile=p.profile;$("account-display").textContent=p.profile.nickname;notify("Nickname updated")}catch(err){notify(err.message||"Nickname could not be updated")}return}
- if(id==="password-change-open"){e.preventDefault();$("password-change-panel").style.display=$("password-change-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-open"){e.preventDefault();$("recovery-answer-panel").style.display=$("recovery-answer-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-save"){e.preventDefault();const err=$("recovery-answer-error");err.textContent="";const currentPassword=$("recovery-current-password").value,recoveryAnswer=$("recovery-answer-new").value;if(recoveryAnswer.trim().length<2){err.textContent="Recovery answer must be at least 2 characters.";return}try{const {data}=await nexusAuth.auth.getSession();await accountRequest({action:"changeRecoveryAnswer",currentPassword,recoveryAnswer},data.session?.access_token);$("recovery-current-password").value="";$("recovery-answer-new").value="";$("recovery-answer-panel").style.display="none";notify("Recovery answer updated")}catch(error){err.textContent=error.message||"Recovery answer could not be updated"}return}
- if(id==="password-change-save"){e.preventDefault();const err=$("password-change-error");err.textContent="";const oldPass=$("current-password").value,newPass=$("new-password").value;if(newPass.length<10){err.textContent="New password must be at least 10 characters.";return}try{if(!currentProfile?.username)throw Error("Account profile is still loading. Try again.");const login=await accountRequest({action:"login",username:currentProfile.username,password:oldPass});await nexusAuth.auth.setSession({access_token:login.session.access_token,refresh_token:login.session.refresh_token});const {error}=await nexusAuth.auth.updateUser({password:newPass});if(error)throw error;$("current-password").value="";$("new-password").value="";$("password-change-panel").style.display="none";notify("Password updated")}catch(error){err.textContent=error.message||"Password could not be updated"}return}
+ if(id==="nickname-save"){e.preventDefault();try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();const p=await accountRequest({action:"nickname",nickname:$("nickname-input").value},data.session?.access_token);currentProfile=p.profile;$("account-display").textContent=p.profile.nickname;notify("Nickname updated")}catch(err){notify(err.message||"Nickname could not be updated")}return}
+ if(id==="password-change-open"){e.preventDefault();$("password-change-panel").style.display=$("password-change-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-open"){e.preventDefault();$("recovery-answer-panel").style.display=$("recovery-answer-panel").style.display==="none"?"block":"none";return}\n if(id==="recovery-answer-save"){e.preventDefault();const err=$("recovery-answer-error");err.textContent="";const currentPassword=$("recovery-current-password").value,recoveryAnswer=$("recovery-answer-new").value;if(recoveryAnswer.trim().length<2){err.textContent="Recovery answer must be at least 2 characters.";return}try{const auth=await ensureNexusAuth();const {data}=await auth.auth.getSession();await accountRequest({action:"changeRecoveryAnswer",currentPassword,recoveryAnswer},data.session?.access_token);$("recovery-current-password").value="";$("recovery-answer-new").value="";$("recovery-answer-panel").style.display="none";notify("Recovery answer updated")}catch(error){err.textContent=error.message||"Recovery answer could not be updated"}return}
+ if(id==="password-change-save"){e.preventDefault();const err=$("password-change-error");err.textContent="";const oldPass=$("current-password").value,newPass=$("new-password").value;if(newPass.length<10){err.textContent="New password must be at least 10 characters.";return}try{if(!currentProfile?.username)throw Error("Account profile is still loading. Try again.");const auth=await ensureNexusAuth();const login=await accountRequest({action:"login",username:currentProfile.username,password:oldPass});await auth.auth.setSession({access_token:login.session.access_token,refresh_token:login.session.refresh_token});const {error}=await auth.auth.updateUser({password:newPass});if(error)throw error;$("current-password").value="";$("new-password").value="";$("password-change-panel").style.display="none";notify("Password updated")}catch(error){err.textContent=error.message||"Password could not be updated"}return}
  if(id==="theme-toggle"){e.preventDefault();document.body.classList.toggle("light");safeSet("nexus-theme",document.body.classList.contains("light")?"light":"dark");notify("Theme updated");return}
  if(button.dataset.color){e.preventDefault();document.documentElement.style.setProperty("--accent",button.dataset.color);safeSet("nexus-accent",button.dataset.color);notify("Accent color updated");return}
  if(id==="about-open"){e.preventDefault();openApp("about")}
@@ -145,10 +165,10 @@ $("forgot-password").onclick=()=>{$("signin-form").style.display="none";$("signu
 $("recover-cancel").onclick=()=>{$("recover-form").style.display="none";$("forgot-password").style.display="block";$("auth-switch").style.display="inline-block";showAuthMode(false)};
 $("recover-form").addEventListener("submit",async e=>{e.preventDefault();$("recover-error").textContent="";$("recover-submit").disabled=true;try{await accountRequest({action:"recover",username:$("recover-username").value,recoveryAnswer:$("recover-answer").value,recoveryCode:$("recover-code").value,newPassword:$("recover-new-password").value});$("recover-form").style.display="none";$("forgot-password").style.display="block";$("auth-switch").style.display="inline-block";showAuthMode(false);$("signin-username").value=$("recover-username").value;notify("Password reset. Sign in with your new password.")}catch(err){$("recover-error").textContent=err.message}finally{$("recover-submit").disabled=false}});
 $("signin-form").addEventListener("submit",async e=>{e.preventDefault();startupAttempt++;$("startup-status").style.display="none";$("signin-error").textContent="";$("signin-submit").disabled=true;try{const data=await accountRequest({action:"login",username:$("signin-username").value,password:$("signin-password").value});await enterWithSession(data.session,data.profile)}catch(err){$("signin-error").textContent=err.message}finally{$("signin-submit").disabled=false}});
-$("signup-form").addEventListener("submit",async e=>{e.preventDefault();startupAttempt++;$("startup-status").style.display="none";$("signup-error").textContent="";$("signup-submit").disabled=true;try{const data=await accountRequest({action:"register",username:$("signup-username").value,nickname:$("signup-nickname").value,password:$("signup-password").value,recoveryAnswer:$("signup-answer").value});await nexusAuth.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});currentProfile=data.profile;$("recovery-codes").value=data.recoveryCodes.join("\n");$("signin-form").style.display="none";$("signup-form").style.display="none";$("auth-switch").style.display="none";$("recovery-box").style.display="block";$("auth-heading").textContent="Secure your account";$("auth-subtitle").textContent="Save these recovery codes before continuing";$("login").style.display="grid";$("login").classList.remove("hide");pendingRecoveryComplete=true}catch(err){$("signup-error").textContent=err.message}finally{$("signup-submit").disabled=false}});
+$("signup-form").addEventListener("submit",async e=>{e.preventDefault();startupAttempt++;$("startup-status").style.display="none";$("signup-error").textContent="";$("signup-submit").disabled=true;try{const data=await accountRequest({action:"register",username:$("signup-username").value,nickname:$("signup-nickname").value,password:$("signup-password").value,recoveryAnswer:$("signup-answer").value});const auth=await ensureNexusAuth();await auth.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});currentProfile=data.profile;$("recovery-codes").value=data.recoveryCodes.join("\n");$("signin-form").style.display="none";$("signup-form").style.display="none";$("auth-switch").style.display="none";$("recovery-box").style.display="block";$("auth-heading").textContent="Secure your account";$("auth-subtitle").textContent="Save these recovery codes before continuing";$("login").style.display="grid";$("login").classList.remove("hide");pendingRecoveryComplete=true}catch(err){$("signup-error").textContent=err.message}finally{$("signup-submit").disabled=false}});
 $("copy-recovery").onclick=()=>{const text=$("recovery-codes").value;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>notify("Recovery codes copied")).catch(()=>notify("Select and copy the codes manually"))}else notify("Select and copy the codes manually")};
 $("recovery-done").onclick=()=>{if(!pendingRecoveryComplete)return;$("recovery-box").style.display="none";$("login").classList.add("hide");$("desktop").style.display="block";setTimeout(()=>$("login").style.display="none",500);pendingRecoveryComplete=false;notify("Account created · welcome to NEXUS")};
-async function signOutNexus(){try{const {error}=await nexusAuth.auth.signOut();if(error)throw error;currentProfile=null;Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").style.display="grid";$("login").classList.remove("hide");showAuthMode(false);notify("NEXUS session ended")}catch(error){notify(error.message||"Could not sign out")}}$("power-btn").onclick=signOutNexus;$("signout-btn").onclick=signOutNexus;
+async function signOutNexus(){try{const auth=await ensureNexusAuth();const {error}=await auth.auth.signOut();if(error)throw error;currentProfile=null;Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").style.display="grid";$("login").classList.remove("hide");showAuthMode(false);notify("NEXUS session ended")}catch(error){notify(error.message||"Could not sign out")}}$("power-btn").onclick=signOutNexus;$("signout-btn").onclick=signOutNexus;
 let startupAttempt=0;
 async function startupCheck(){
  const attempt=++startupAttempt;
@@ -160,7 +180,8 @@ async function startupCheck(){
  $("boot").style.display="grid";
  $("boot").classList.remove("hide");
  const task=(async()=>{
-  const {data,error}=await nexusAuth.auth.getSession();
+  const auth=await ensureNexusAuth();
+  const {data,error}=await auth.auth.getSession();
   if(error)throw error;
   if(!data.session)return {kind:"signed-out"};
   const p=await accountRequest({action:"profile"},data.session.access_token);
@@ -196,7 +217,6 @@ function showStartupError(){
  $("startup-message").textContent="NEXUS couldn't check your saved session. You can still sign in, or retry.";
  $("startup-status").style.display="block";
 }
-startupCheck().catch(showStartupError);
 $("error-dismiss").onclick=()=>$("error-overlay").classList.remove("show");
 $("error-reload").onclick=()=>location.reload();
 $("app-search").addEventListener("input",e=>filterApps(e.target.value));
