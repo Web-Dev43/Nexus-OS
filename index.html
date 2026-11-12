@@ -144,15 +144,17 @@ $("auth-switch").onclick=()=>showAuthMode($("signup-form").style.display==="none
 $("forgot-password").onclick=()=>{$("signin-form").style.display="none";$("signup-form").style.display="none";$("auth-switch").style.display="none";$("forgot-password").style.display="none";$("recover-form").style.display="grid";$("auth-heading").textContent="Recover your account";$("auth-subtitle").textContent="You need your recovery answer and an unused recovery code"};
 $("recover-cancel").onclick=()=>{$("recover-form").style.display="none";$("forgot-password").style.display="block";$("auth-switch").style.display="inline-block";showAuthMode(false)};
 $("recover-form").addEventListener("submit",async e=>{e.preventDefault();$("recover-error").textContent="";$("recover-submit").disabled=true;try{await accountRequest({action:"recover",username:$("recover-username").value,recoveryAnswer:$("recover-answer").value,recoveryCode:$("recover-code").value,newPassword:$("recover-new-password").value});$("recover-form").style.display="none";$("forgot-password").style.display="block";$("auth-switch").style.display="inline-block";showAuthMode(false);$("signin-username").value=$("recover-username").value;notify("Password reset. Sign in with your new password.")}catch(err){$("recover-error").textContent=err.message}finally{$("recover-submit").disabled=false}});
-$("signin-form").addEventListener("submit",async e=>{e.preventDefault();$("signin-error").textContent="";$("signin-submit").disabled=true;try{const data=await accountRequest({action:"login",username:$("signin-username").value,password:$("signin-password").value});await enterWithSession(data.session,data.profile)}catch(err){$("signin-error").textContent=err.message}finally{$("signin-submit").disabled=false}});
-$("signup-form").addEventListener("submit",async e=>{e.preventDefault();$("signup-error").textContent="";$("signup-submit").disabled=true;try{const data=await accountRequest({action:"register",username:$("signup-username").value,nickname:$("signup-nickname").value,password:$("signup-password").value,recoveryAnswer:$("signup-answer").value});await nexusAuth.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});currentProfile=data.profile;$("recovery-codes").value=data.recoveryCodes.join("\n");$("signin-form").style.display="none";$("signup-form").style.display="none";$("auth-switch").style.display="none";$("recovery-box").style.display="block";$("auth-heading").textContent="Secure your account";$("auth-subtitle").textContent="Save these recovery codes before continuing";$("login").style.display="grid";$("login").classList.remove("hide");pendingRecoveryComplete=true}catch(err){$("signup-error").textContent=err.message}finally{$("signup-submit").disabled=false}});
+$("signin-form").addEventListener("submit",async e=>{e.preventDefault();startupAttempt++;$("startup-status").style.display="none";$("signin-error").textContent="";$("signin-submit").disabled=true;try{const data=await accountRequest({action:"login",username:$("signin-username").value,password:$("signin-password").value});await enterWithSession(data.session,data.profile)}catch(err){$("signin-error").textContent=err.message}finally{$("signin-submit").disabled=false}});
+$("signup-form").addEventListener("submit",async e=>{e.preventDefault();startupAttempt++;$("startup-status").style.display="none";$("signup-error").textContent="";$("signup-submit").disabled=true;try{const data=await accountRequest({action:"register",username:$("signup-username").value,nickname:$("signup-nickname").value,password:$("signup-password").value,recoveryAnswer:$("signup-answer").value});await nexusAuth.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});currentProfile=data.profile;$("recovery-codes").value=data.recoveryCodes.join("\n");$("signin-form").style.display="none";$("signup-form").style.display="none";$("auth-switch").style.display="none";$("recovery-box").style.display="block";$("auth-heading").textContent="Secure your account";$("auth-subtitle").textContent="Save these recovery codes before continuing";$("login").style.display="grid";$("login").classList.remove("hide");pendingRecoveryComplete=true}catch(err){$("signup-error").textContent=err.message}finally{$("signup-submit").disabled=false}});
 $("copy-recovery").onclick=()=>{const text=$("recovery-codes").value;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>notify("Recovery codes copied")).catch(()=>notify("Select and copy the codes manually"))}else notify("Select and copy the codes manually")};
 $("recovery-done").onclick=()=>{if(!pendingRecoveryComplete)return;$("recovery-box").style.display="none";$("login").classList.add("hide");$("desktop").style.display="block";setTimeout(()=>$("login").style.display="none",500);pendingRecoveryComplete=false;notify("Account created · welcome to NEXUS")};
 async function signOutNexus(){try{const {error}=await nexusAuth.auth.signOut();if(error)throw error;currentProfile=null;Object.keys(instances).forEach(closeApp);$("start-menu").classList.remove("open");$("desktop").style.display="none";$("login").style.display="grid";$("login").classList.remove("hide");showAuthMode(false);notify("NEXUS session ended")}catch(error){notify(error.message||"Could not sign out")}}$("power-btn").onclick=signOutNexus;$("signout-btn").onclick=signOutNexus;
 let startupAttempt=0;
 async function startupCheck(){
  const attempt=++startupAttempt;
- $("startup-status").style.display="none";
+ $("startup-status").style.display="block";
+ $("startup-message").textContent="Checking your saved session in the background. You can sign in now.";
+ $("startup-retry").textContent="Check again";
  $("login").style.display="none";
  $("login").classList.add("hide");
  $("boot").style.display="grid";
@@ -165,23 +167,26 @@ async function startupCheck(){
   return {kind:"signed-in",profile:p.profile};
  })();
  const timeout=new Promise(resolve=>setTimeout(()=>resolve({kind:"timeout"}),7000));
- const [result]=await Promise.all([Promise.race([task,timeout]),new Promise(resolve=>setTimeout(resolve,500))]);
+ await new Promise(resolve=>setTimeout(resolve,350));
  if(attempt!==startupAttempt)return;
  $("boot").classList.add("hide");
+ $("login").style.display="grid";
+ $("login").classList.remove("hide");
+ const result=await Promise.race([task.then(value=>value).catch(()=>({kind:"error"})),timeout]);
+ if(attempt!==startupAttempt)return;
  if(result.kind==="signed-in"){
   currentProfile=result.profile;
   $("login").style.display="none";
   $("desktop").style.display="block";
   notify("Welcome back, "+result.profile.nickname);
-  return;
+ }else if(result.kind==="signed-out"){
+  $("startup-status").style.display="none";
+ }else{
+  $("startup-message").textContent=result.kind==="timeout"
+   ?"Session check is taking longer than expected. You can sign in now or retry."
+   :"NEXUS couldn't verify your saved session. You can sign in now or retry.";
+  $("startup-status").style.display="block";
  }
- $("desktop").style.display="none";
- $("login").style.display="grid";
- $("login").classList.remove("hide");
- $("startup-message").textContent=result.kind==="timeout"
-  ?"NEXUS is taking too long to check your saved session. You can still sign in, or retry."
-  :"No saved session was found. Sign in below, or retry if you expected automatic sign-in.";
- $("startup-status").style.display="block";
 }
 $("startup-retry").onclick=()=>startupCheck().catch(showStartupError);
 function showStartupError(){
