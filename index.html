@@ -197,7 +197,7 @@ function wireStore(el){
    if(!packageBlob.size)throw new Error("The app package is empty");
    setProgress(15,"App files prepared · "+storageBytes(packageBlob.size));
    await packageAction("put",app.id,packageBlob);
-   setProgress(50,"Saving app package on this device…");
+   setProgress(50,"App package saved · checking the saved copy…");
    const savedPackage=await packageAction("get",app.id);
    if(!(savedPackage instanceof Blob)||savedPackage.size!==packageBlob.size)throw new Error("Saved package could not be verified");
    const savedText=await savedPackage.text();
@@ -213,7 +213,7 @@ function wireStore(el){
    setTimeout(()=>{overlay.classList.remove("show");downloadBusy=false;draw();notify(app.name+" installed")},650);
   }catch(error){
    try{await packageAction("delete",app.id)}catch(cleanupError){}
-   title.textContent="Installation failed";setProgress(0,error.message||"Could not install this app");
+   title.textContent="Installation failed";status.textContent=error.message||"Could not install this app";
    downloadBusy=false;draw();
    setTimeout(()=>overlay.classList.remove("show"),2200);
    console.error("NEXUS App Store install error",error);
