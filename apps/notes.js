@@ -41,7 +41,7 @@ function render(){return `
  </div>
 </div>`}
 function mount(windowEl, api){
- const root=windowEl.querySelector(".win-body"), vault=readVault();
+ const root=windowEl.querySelector(".win-body"); let vault=readVault();
  const gate=$(root,"notes-gate"), workspace=$(root,"notes-workspace"), pass=$(root,"notes-pass"), confirm=$(root,"notes-confirm");
  const err=$(root,"notes-error"), status=$(root,"notes-status"), list=$(root,"notes-list"), editor=$(root,"notes-editor");
  let notes=[], active=null, secret="", saveTimer=null, locked=true;
@@ -59,7 +59,7 @@ function mount(windowEl, api){
   const title=$(root,"notes-title"), body=$(root,"notes-body");
   const changed=()=>{n.title=title.value;n.body=body.value;n.updated=Date.now();$(root,"notes-save-state").textContent="Saving…";renderList();clearTimeout(saveTimer);saveTimer=setTimeout(save,450)};
   title.addEventListener("input",changed);body.addEventListener("input",changed);
-  $("notes-delete",root).addEventListener("click",async()=>{if(!confirm("Delete this note permanently?"))return;notes=notes.filter(x=>x.id!==active);active=null;await save();renderList();renderEditor()});
+  $(root,"notes-delete").addEventListener("click",async()=>{if(!window.confirm("Delete this note permanently?"))return;notes=notes.filter(x=>x.id!==active);active=null;await save();renderList();renderEditor()});
  }
  async function save(){if(locked)return;try{const encrypted=await seal({notes},secret,un64(vault.salt));if(!writeVault(encrypted)){status.textContent="Storage is full. Export or remove some browser data.";return}status.textContent="Encrypted and saved on this device";const state=$(root,"notes-save-state");if(state)state.textContent="Saved"}catch(e){api.notify("Could not encrypt and save notes")}}
  async function unlock(){
